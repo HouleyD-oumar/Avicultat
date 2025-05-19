@@ -1,0 +1,10 @@
+# Redirection vers le point d'entrée public/index.php
+RewriteEngine On
+RewriteBase /php/Avicultat/
+
+# Ne pas rediriger les fichiers et dossiers existants
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Rediriger toutes les autres requêtes vers public/index.php
+RewriteRule ^(.*)$ public/index.php?url=$1 [QSA,L]
