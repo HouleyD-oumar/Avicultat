@@ -4,10 +4,10 @@
     <!-- Fil d'Ariane -->
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/dashboard">Tableau de bord</a></li>
-            <li class="breadcrumb-item"><a href="/farms">Fermes</a></li>
-            <li class="breadcrumb-item"><a href="/farms/<?= $farm['id_ferme'] ?>"><?= htmlspecialchars($farm['nom_ferme']) ?></a></li>
-            <li class="breadcrumb-item"><a href="/farms/<?= $farm['id_ferme'] ?>/batches">Lots de volailles</a></li>
+            <li class="breadcrumb-item"><a href="<?= URLROOT ?>/dashboard">Tableau de bord</a></li>
+            <li class="breadcrumb-item"><a href="<?= URLROOT ?>/farm">Fermes</a></li>
+            <li class="breadcrumb-item"><a href="<?= URLROOT ?>/farm/show/<?= $farm['id_ferme'] ?>"><?= htmlspecialchars($farm['nom_ferme']) ?></a></li>
+            <li class="breadcrumb-item"><a href="<?= URLROOT ?>/batch/index/<?= $farm['id_ferme'] ?>">Lots de volailles</a></li>
             <li class="breadcrumb-item active" aria-current="page">Supprimer le lot</li>
         </ol>
     </nav>
@@ -35,9 +35,10 @@
                         Cette action est irréversible. Toutes les données associées à ce lot (traitements, alimentations, etc.) seront également supprimées.
                     </div>
 
-                    <form method="POST" class="mt-4">
+                    <form method="POST" action="<?= URLROOT ?>/batch/delete/<?= $farm['id_ferme'] ?>/<?= $batch['id_lot'] ?>" class="mt-4">
+                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                         <div class="d-flex justify-content-between">
-                            <a href="/farms/<?= $farm['id_ferme'] ?>/batches/<?= $batch['id_lot'] ?>" class="btn btn-secondary">
+                            <a href="<?= URLROOT ?>/batch/show/<?= $farm['id_ferme'] ?>/<?= $batch['id_lot'] ?>" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left"></i> Annuler
                             </a>
                             <button type="submit" class="btn btn-danger">

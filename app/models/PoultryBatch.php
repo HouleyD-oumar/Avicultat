@@ -9,6 +9,42 @@ class PoultryBatch extends BaseModel {
     protected $fillable = ['race', 'effectif_initial', 'date_arrivee', 'statut', 'id_ferme'];
     
     /**
+     * Récupère les lots d'une ferme avec filtres
+     * 
+     * @param int $farmId ID de la ferme
+     * @param string $search Terme de recherche
+     * @param string $status Statut du lot
+     * @param string $orderBy Champ pour le tri
+     * @param string $order Direction du tri (ASC ou DESC)
+     * @return array Liste des lots
+     */
+    public function findByFarmId($farmId, $search = '', $status = '', $orderBy = 'date_arrivee', $order = 'DESC') {
+        $sql = "SELECT pb.*, f.nom_ferme as farm_name 
+                FROM {$this->table} pb 
+                JOIN farms f ON pb.id_ferme = f.id_ferme 
+                WHERE pb.id_ferme = :farm_id";
+        
+        $params = ['farm_id' => $farmId];
+        
+        if (!empty($search)) {
+            $sql .= " AND pb.race LIKE :search";
+            $params['search'] = "%{$search}%";
+        }
+        
+        if (!empty($status)) {
+            $sql .= " AND pb.statut = :status";
+            $params['status'] = $status;
+        }
+        
+        $sql .= " ORDER BY pb.{$orderBy} {$order}";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
      * Récupère les lots actifs d'un utilisateur
      * 
      * @param int $userId ID de l'utilisateur
@@ -55,12 +91,14 @@ class PoultryBatch extends BaseModel {
      * @param int $id ID du lot
      * @return array|bool Détails du lot ou false si non trouvé
      */
-    public function findWithDetails($id) {
+    public function findById($id) {
         $sql = "SELECT pb.*, f.nom_ferme, f.localisation 
                 FROM {$this->table} pb 
                 JOIN farms f ON pb.id_ferme = f.id_ferme 
                 WHERE pb.id_lot = :id";
-        return $this->db->query($sql, ['id' => $id])->fetch();
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
     
     /**
@@ -92,7 +130,7 @@ class PoultryBatch extends BaseModel {
                     t.produit as description,
                     t.observations as details
                 FROM treatments t
-                WHERE t.id_lot = :id
+                WHERE t.id_lot = :id1
                 UNION ALL
                 SELECT 
                     'alimentation' as type,
@@ -100,120 +138,54 @@ class PoultryBatch extends BaseModel {
                     f.type as description,
                     CONCAT(f.quantite, ' kg') as details
                 FROM feeds f
-                WHERE f.id_lot = :id
+                WHERE f.id_lot = :id2
                 ORDER BY date DESC";
         
-        return $this->db->query($sql, ['id' => $id])->fetchAll();
-    }
-    
-    /**
-     * Ajoute un nouveau lot
-     * 
-     * @param array $data Données du lot
-     * @return int|bool ID du nouveau lot ou false en cas d'échec
-     */
-    public function addBatch($data) {
-        return $this->create($data);
-    }
-    
-    /**
-     * Met à jour un lot
-     * 
-     * @param int $id ID du lot
-     * @param array $data Nouvelles données
-     * @return bool Succès ou échec de la mise à jour
-     */
-    public function updateBatch($id, $data) {
-        return $this->update($id, $data);
-    }
-    
-    /**
-     * Récupère les lots d'une ferme spécifique
-     * 
-     * @param int $farmId ID de la ferme
-     * @param string $orderBy Champ pour le tri
-     * @param string $order Direction du tri (ASC ou DESC)
-     * @return array Liste des lots de la ferme
-     */
-    public function findByFarmId($farmId, $orderBy = 'date_arrivee', $order = 'DESC') {
-        $sql = "SELECT pb.*, f.nom_ferme as farm_name 
-                FROM {$this->table} pb 
-                JOIN farms f ON pb.id_ferme = f.id_ferme 
-                WHERE pb.id_ferme = :farm_id 
-                ORDER BY pb.{$orderBy} {$order}";
-        
         $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':farm_id', $farmId, PDO::PARAM_INT);
+        $stmt->bindValue(':id1', $id, PDO::PARAM_INT);
+        $stmt->bindValue(':id2', $id, PDO::PARAM_INT);
         $stmt->execute();
-        
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-    
-    /**
-     * Récupère les lots actifs d'une ferme
-     * 
-     * @param int $farmId ID de la ferme
-     * @return array Liste des lots actifs
-     */
-    public function getActiveBatchesByFarmId($farmId) {
-        $sql = "SELECT * FROM {$this->table} 
-                WHERE id_ferme = :farm_id AND statut = 'actif' 
-                ORDER BY date_arrivee DESC";
-        return $this->db->query($sql, ['farm_id' => $farmId])->fetchAll();
-    }
-    
-    /**
-     * Récupère les traitements d'un lot
-     * 
-     * @param int $batchId ID du lot
-     * @return array Liste des traitements
-     */
-    public function getTreatments($batchId) {
-        $sql = "SELECT * FROM treatments 
-                WHERE id_lot = :batch_id 
-                ORDER BY date_application DESC";
-        return $this->db->query($sql, ['batch_id' => $batchId])->fetchAll();
-    }
-    
-    /**
-     * Récupère les alimentations d'un lot
-     * 
-     * @param int $batchId ID du lot
-     * @return array Liste des alimentations
-     */
-    public function getFeeds($batchId) {
-        $sql = "SELECT * FROM feeds 
-                WHERE id_lot = :batch_id 
-                ORDER BY date_distribution DESC";
-        return $this->db->query($sql, ['batch_id' => $batchId])->fetchAll();
     }
     
     /**
      * Validation des données
      * 
      * @param array $data Données du lot
+     * @param bool $isUpdate Indique si c'est une mise à jour
      * @return array Liste des erreurs
      */
-    public function validate($data) {
+    public function validate($data, $isUpdate = false) {
         $errors = [];
         
+        // Validation de la race
         if (empty($data['race'])) {
             $errors['race'] = 'La race est requise';
         } elseif (strlen($data['race']) > 100) {
             $errors['race'] = 'La race ne doit pas dépasser 100 caractères';
         }
         
-        if (!isset($data['effectif_initial']) || $data['effectif_initial'] <= 0) {
-            $errors['effectif_initial'] = 'L\'effectif initial doit être supérieur à 0';
+        // Validation de l'effectif initial
+        if (!isset($data['effectif_initial']) || !is_numeric($data['effectif_initial']) || $data['effectif_initial'] <= 0) {
+            $errors['effectif_initial'] = 'L\'effectif initial doit être un nombre supérieur à 0';
         }
         
+        // Validation de la date d'arrivée
         if (empty($data['date_arrivee'])) {
             $errors['date_arrivee'] = 'La date d\'arrivée est requise';
+        } elseif (!strtotime($data['date_arrivee'])) {
+            $errors['date_arrivee'] = 'La date d\'arrivée est invalide';
         } elseif (strtotime($data['date_arrivee']) > time()) {
             $errors['date_arrivee'] = 'La date d\'arrivée ne peut pas être dans le futur';
         }
         
-        if (empty($data['id_ferme'])) {
+        // Validation du statut
+        if (isset($data['statut']) && !in_array($data['statut'], ['actif', 'vendu', 'perte totale'])) {
+            $errors['statut'] = 'Le statut est invalide';
+        }
+        
+        // Validation de l'ID de la ferme (uniquement pour la création)
+        if (!$isUpdate && (!isset($data['id_ferme']) || empty($data['id_ferme']))) {
             $errors['id_ferme'] = 'La ferme est requise';
         }
         
@@ -227,7 +199,7 @@ class PoultryBatch extends BaseModel {
      * @return int|bool ID du nouveau lot ou false en cas d'échec
      */
     public function create($data) {
-        $errors = $this->validate($data);
+        $errors = $this->validate($data, false);
         if (!empty($errors)) {
             return false;
         }
@@ -243,11 +215,73 @@ class PoultryBatch extends BaseModel {
      * @return bool Succès ou échec de la mise à jour
      */
     public function update($id, $data) {
-        $errors = $this->validate($data);
-        if (!empty($errors)) {
+        try {
+            // Vérifier si le lot existe
+            $batch = $this->findById($id);
+            if (!$batch) {
+                error_log("Erreur : Lot non trouvé (ID: {$id})");
+                return false;
+            }
+
+            // Validation des données
+            $errors = $this->validate($data, true);
+            if (!empty($errors)) {
+                error_log("Erreur de validation : " . json_encode($errors));
+                return false;
+            }
+
+            // Mise à jour dans la base de données
+            $result = parent::update($id, $data);
+            
+            if (!$result) {
+                error_log("Erreur lors de la mise à jour du lot (ID: {$id})");
+            }
+            
+            return $result;
+        } catch (Exception $e) {
+            error_log("Exception lors de la mise à jour du lot : " . $e->getMessage());
             return false;
         }
+    }
+    
+    /**
+     * Compte le nombre de lots actifs d'une ferme
+     * 
+     * @param int $farmId ID de la ferme
+     * @return int Nombre de lots actifs
+     */
+    public function countActiveBatches($farmId) {
+        $sql = "SELECT COUNT(*) as count 
+                FROM {$this->table} 
+                WHERE id_ferme = :farm_id 
+                AND statut = 'actif'";
         
-        return parent::update($id, $data);
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['farm_id' => $farmId]);
+        $result = $stmt->fetch();
+        
+        return isset($result['count']) ? (int)$result['count'] : 0;
+    }
+    
+    /**
+     * Récupère les statistiques des lots d'une ferme
+     * 
+     * @param int $farmId ID de la ferme
+     * @return array Statistiques des lots
+     */
+    public function getFarmStats($farmId) {
+        $sql = "SELECT 
+                    COUNT(*) as total_batches,
+                    SUM(CASE WHEN statut = 'actif' THEN 1 ELSE 0 END) as active_batches,
+                    SUM(CASE WHEN statut = 'vendu' THEN 1 ELSE 0 END) as sold_batches,
+                    SUM(CASE WHEN statut = 'perte totale' THEN 1 ELSE 0 END) as lost_batches,
+                    SUM(effectif_initial) as total_poultry
+                FROM {$this->table}
+                WHERE id_ferme = :farm_id";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['farm_id' => $farmId]);
+        
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 } 

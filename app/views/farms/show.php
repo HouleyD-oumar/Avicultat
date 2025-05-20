@@ -92,7 +92,7 @@ require_once $headerPath;
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h5 class="card-title mb-0">Lots de volailles</h5>
-                <a href="<?= APP_URL ?>/batch/add/<?= $data['farm']['id_ferme'] ?>" class="btn btn-primary btn-sm">
+                <a href="<?= APP_URL ?>/batch/create/<?= $data['farm']['id_ferme'] ?>" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus me-1"></i>Ajouter un lot
                 </a>
             </div>

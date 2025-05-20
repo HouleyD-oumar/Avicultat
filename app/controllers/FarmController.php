@@ -76,7 +76,8 @@ class FarmController extends Controller {
         }
         
         // Vérifier le token CSRF
-        if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $csrf_token = isset($_POST['csrf_token']) ? $_POST['csrf_token'] : '';
+        if (!validateCSRFToken($csrf_token)) {
             setFlash('error', 'Erreur de sécurité. Veuillez réessayer.');
             redirect('farm/add');
         }
@@ -84,9 +85,9 @@ class FarmController extends Controller {
         // Récupérer et nettoyer les données du formulaire
         $data = [
             'title' => 'Ajouter une ferme',
-            'nom_ferme' => trim($_POST['nom_ferme'] ?? ''),
-            'localisation' => trim($_POST['localisation'] ?? ''),
-            'date_creation' => trim($_POST['date_creation'] ?? date('Y-m-d')),
+            'nom_ferme' => trim(isset($_POST['nom_ferme']) ? $_POST['nom_ferme'] : ''),
+            'localisation' => trim(isset($_POST['localisation']) ? $_POST['localisation'] : ''),
+            'date_creation' => trim(isset($_POST['date_creation']) ? $_POST['date_creation'] : date('Y-m-d')),
             'id_user' => $_SESSION['user_id'],
             'errors' => []
         ];
@@ -222,7 +223,8 @@ class FarmController extends Controller {
         }
         
         // Vérifier le token CSRF
-        if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $csrf_token = isset($_POST['csrf_token']) ? $_POST['csrf_token'] : '';
+        if (!validateCSRFToken($csrf_token)) {
             setFlash('error', 'Erreur de sécurité. Veuillez réessayer.');
             redirect('farm/edit/' . $id);
         }
@@ -315,7 +317,8 @@ class FarmController extends Controller {
         }
         
         // Vérifier le token CSRF
-        if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $csrf_token = isset($_POST['csrf_token']) ? $_POST['csrf_token'] : '';
+        if (!validateCSRFToken($csrf_token)) {
             setFlash('error', 'Erreur de sécurité. Veuillez réessayer.');
             redirect('farm');
         }

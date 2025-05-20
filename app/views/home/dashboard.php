@@ -51,7 +51,7 @@
                                             ?>
                                         </td>
                                         <td>
-                                            <a href="<?= APP_URL ?>/farm/view/<?= $farm['id_ferme'] ?>" class="btn btn-sm btn-outline-primary">
+                                            <a href="<?= APP_URL ?>/farm/show/<?= $farm['id_ferme'] ?>" class="btn btn-sm btn-outline-primary">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                         </td>

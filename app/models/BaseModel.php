@@ -52,6 +52,7 @@ class BaseModel {
         $data = array_intersect_key($data, array_flip($this->fillable));
         
         if (empty($data)) {
+            error_log("Erreur : Aucune donnée valide à insérer");
             return false;
         }
         
@@ -63,8 +64,18 @@ class BaseModel {
         $sql = "INSERT INTO {$this->table} ({$fields}) VALUES ({$placeholders})";
         
         try {
-            $this->db->query($sql, $data);
-            return $this->db->lastInsertId();
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute($data);
+            
+            if ($result) {
+                return $this->db->lastInsertId();
+            } else {
+                error_log("Erreur lors de l'exécution de la requête : " . implode(", ", $stmt->errorInfo()));
+                return false;
+            }
+        } catch (PDOException $e) {
+            error_log("Erreur PDO lors de la création : " . $e->getMessage());
+            return false;
         } catch (Exception $e) {
             error_log("Erreur lors de la création : " . $e->getMessage());
             return false;
@@ -83,6 +94,7 @@ class BaseModel {
         $data = array_intersect_key($data, array_flip($this->fillable));
         
         if (empty($data)) {
+            error_log("Erreur : Aucune donnée valide à mettre à jour");
             return false;
         }
         
@@ -93,9 +105,19 @@ class BaseModel {
         $sql = "UPDATE {$this->table} SET {$fields} WHERE {$this->primaryKey} = :id";
         
         try {
+            $stmt = $this->db->prepare($sql);
             $data['id'] = $id;
-            $this->db->query($sql, $data);
-            return true;
+            $result = $stmt->execute($data);
+            
+            if ($result) {
+                return true;
+            } else {
+                error_log("Erreur lors de l'exécution de la requête : " . implode(", ", $stmt->errorInfo()));
+                return false;
+            }
+        } catch (PDOException $e) {
+            error_log("Erreur PDO lors de la mise à jour : " . $e->getMessage());
+            return false;
         } catch (Exception $e) {
             error_log("Erreur lors de la mise à jour : " . $e->getMessage());
             return false;
@@ -112,8 +134,18 @@ class BaseModel {
         $sql = "DELETE FROM {$this->table} WHERE {$this->primaryKey} = :id";
         
         try {
-            $this->db->query($sql, ['id' => $id]);
-            return true;
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute(['id' => $id]);
+            
+            if ($result) {
+                return true;
+            } else {
+                error_log("Erreur lors de l'exécution de la requête : " . implode(", ", $stmt->errorInfo()));
+                return false;
+            }
+        } catch (PDOException $e) {
+            error_log("Erreur PDO lors de la suppression : " . $e->getMessage());
+            return false;
         } catch (Exception $e) {
             error_log("Erreur lors de la suppression : " . $e->getMessage());
             return false;

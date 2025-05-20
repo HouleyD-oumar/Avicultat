@@ -22,32 +22,48 @@ class App {
         $url = $this->parseUrl();
         
         // Gestion des routes imbriquées
-        if (isset($url[0]) && $url[0] === 'farms' && isset($url[1]) && is_numeric($url[1])) {
-            $farmId = $url[1];
-            unset($url[0], $url[1]);
-            
-            if (isset($url[2]) && $url[2] === 'batches') {
-                $this->controller = 'PoultryBatchController';
-                $this->controllerName = 'PoultryBatchController';
-                unset($url[2]);
-                
-                // Ajouter farmId comme premier paramètre
-                $this->params[] = $farmId;
-            }
-        } else {
-            // Logique de routage standard
-            if (isset($url[0])) {
-                $potentialController = ucfirst($url[0]) . 'Controller';
-                if (file_exists(dirname(__DIR__) . '/app/controllers/' . $potentialController . '.php')) {
-                    $this->controller = $potentialController;
-                    $this->controllerName = $potentialController;
+        if (isset($url[0])) {
+            switch ($url[0]) {
+                case 'batch':
+                    $this->controller = 'PoultryBatchController';
+                    $this->controllerName = 'PoultryBatchController';
                     unset($url[0]);
-                } else {
-                    // Rediriger vers la page 404 si le contrôleur n'existe pas
-                    header("HTTP/1.0 404 Not Found");
-                    require_once dirname(__DIR__) . '/app/views/errors/404.php';
-                    exit;
-                }
+                    
+                    // Si nous avons un ID de ferme
+                    if (isset($url[1]) && is_numeric($url[1])) {
+                        $this->params[] = $url[1];
+                        unset($url[1]);
+                    }
+                    break;
+                    
+                case 'farms':
+                    if (isset($url[1]) && is_numeric($url[1])) {
+                        $farmId = $url[1];
+                        unset($url[0], $url[1]);
+                        
+                        if (isset($url[2]) && $url[2] === 'batches') {
+                            $this->controller = 'PoultryBatchController';
+                            $this->controllerName = 'PoultryBatchController';
+                            unset($url[2]);
+                            
+                            // Ajouter farmId comme premier paramètre
+                            $this->params[] = $farmId;
+                        }
+                    }
+                    break;
+                    
+                default:
+                    $potentialController = ucfirst($url[0]) . 'Controller';
+                    if (file_exists(dirname(__DIR__) . '/app/controllers/' . $potentialController . '.php')) {
+                        $this->controller = $potentialController;
+                        $this->controllerName = $potentialController;
+                        unset($url[0]);
+                    } else {
+                        // Rediriger vers la page 404 si le contrôleur n'existe pas
+                        header("HTTP/1.0 404 Not Found");
+                        require_once dirname(__DIR__) . '/app/views/errors/404.php';
+                        exit;
+                    }
             }
         }
         

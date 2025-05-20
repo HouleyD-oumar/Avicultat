@@ -12,13 +12,14 @@ if (!defined('DB_CHARSET')) define('DB_CHARSET', 'utf8mb4');
 
 // Configuration de l'application
 define('APP_NAME', 'Avicultat');
+define('APP_VERSION', '1.0.0');
 define('APP_URL', 'http://localhost/php/Avicultat');
 define('APP_ROOT', dirname(dirname(__FILE__)));
 define('APPROOT', dirname(dirname(__FILE__))); // Chemin vers le dossier racine de l'application
 define('APP_ENV', 'development');
 
 // Configuration des sessions
-define('SESSION_LIFETIME', 120);
+define('SESSION_LIFETIME', 3600); // 1 heure
 define('SESSION_NAME', 'avicultat_session');
 
 // Configuration des logs
@@ -47,3 +48,12 @@ date_default_timezone_set('UTC');
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+
+// URL de base de l'application
+define('URLROOT', '/php/Avicultat');
+
+// Configuration des messages flash
+define('FLASH_SUCCESS', 'success');
+define('FLASH_ERROR', 'error');
+define('FLASH_INFO', 'info');
+define('FLASH_WARNING', 'warning');

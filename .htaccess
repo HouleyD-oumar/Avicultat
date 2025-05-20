@@ -2,6 +2,20 @@
 RewriteEngine On
 RewriteBase /php/Avicultat/
 
+# Rediriger les anciennes URLs vers les nouvelles
+RewriteRule ^batch/?$ /php/Avicultat/farms [R=301,L]
+RewriteRule ^batch/([0-9]+)/?$ /php/Avicultat/farms/$1/batches [R=301,L]
+RewriteRule ^batch/([0-9]+)/show/([0-9]+)/?$ /php/Avicultat/farms/$1/batches/$2 [R=301,L]
+
+# Règles pour les lots de volailles
+RewriteRule ^batch/add/([0-9]+)/?$ public/index.php?url=batch/add/$1 [QSA,L]
+RewriteRule ^batch/create/([0-9]+)/?$ public/index.php?url=batch/create/$1 [QSA,L]
+RewriteRule ^batch/edit/([0-9]+)/([0-9]+)/?$ public/index.php?url=batch/edit/$1/$2 [QSA,L]
+RewriteRule ^batch/update/([0-9]+)/([0-9]+)/?$ public/index.php?url=batch/update/$1/$2 [QSA,L]
+RewriteRule ^batch/delete/([0-9]+)/([0-9]+)/?$ public/index.php?url=batch/delete/$1/$2 [QSA,L]
+RewriteRule ^batch/show/([0-9]+)/([0-9]+)/?$ public/index.php?url=batch/show/$1/$2 [QSA,L]
+RewriteRule ^batch/index/([0-9]+)/?$ public/index.php?url=batch/index/$1 [QSA,L]
+
 # Ne pas rediriger les fichiers et dossiers existants
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
